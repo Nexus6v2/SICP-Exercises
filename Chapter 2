@@ -1,0 +1,729 @@
+2.17
+(define (last-pair items)
+  (if (null? (cdr items))
+      items
+      (last-pair (cdr items))))
+
+;;; I consider that a last element function would be much more usefull so I've defined it here:
+
+(define (last-elem items)
+  (if (null? (cdr items))
+      (car items)
+      (last-elem (cdr items))))
+
+
+
+2.18
+(define (reverse items)
+  (if (null? (cdr items))
+      items
+      (append (reverse (cdr items)) 
+              (cons (car items) nil))))
+
+
+
+2.19
+;;; This one looks pretty complicated at the first look but turns out to be very simple. 
+;;; I think that the purpose of such excercices is to show students how to think in terms of defining additional 
+;;; variables to create some levels of abstraction.
+;;; And it seems to work. 
+;;; Even the simplest hiding of 'car', 'cdr' and 'null?' procedures gives unprepared reader a better understanding 
+;;; of what this parts of current procedure are meant to do.
+
+(define us-coins (list 50 25 10 5 1))
+
+(define uk-coins (list 100 50 20 10 5 2 1 0.5))
+
+(define (first-denomination coins)
+  (car coins))
+
+(define (except-first-denomination coins)
+  (cdr coins))
+
+(define (no-more? coins)
+  (null? coins))
+
+(define (cc amount coin-values)
+  (cond ((= amount 0) 1)
+        ((or (< amount 0) (no-more? coin-values)) 0)
+        (else
+         (+ (cc amount
+                (except-first-denomination coin-values))
+            (cc (- amount
+                   (first-denomination coin-values))
+                coin-values)))))
+
+
+
+2.20
+;;; Here I've decided to define a global filter procedure instead of local one because 
+;;; it would be usefull in future excercises for sure.
+;;; I think that this kind of solution is pretty simple to understand compare to other ones
+;;; that I've found on the net later.
+
+(define (filter pred items)
+  (cond ((null? items) nil)
+        ((pred (car items)) 
+         (cons (car items)
+               (filter pred (cdr items))))
+        (else (filter pred (cdr items)))))
+
+(define (same-parity a . z)
+  (if (even? a)
+      (cons a (filter even? z))
+      (cons a (filter odd? z))))
+
+
+
+2.21
+(define (square-list1 items)
+  (if (null? items)
+      nil
+      (cons ((lambda (x) (* x x)) (car items))
+            (square-list1 (cdr items)))))
+
+(define (square-list2 items)
+  (map (lambda (x) (* x x)) items))
+
+
+
+2.23
+(define (for-each proc items)
+  (cond ((not (null? items))
+         (proc (car items))
+         (for-each proc (cdr items)))))
+
+
+
+2.25
+(define a (list 1 3 (list 5 7) 9))
+(define b (list (list 7)))
+(define c (list 1 (list 2 (list 3 (list 4 (list 5 (list 6 7)))))))
+
+(car (cdr (car (cdr (cdr a))))) ;7
+(car (car b)) ;7
+(car (cdr (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr c)))))))))))) ;7
+
+
+
+2.26
+(define x (list 1 2 3))
+(define y (list 4 5 6))
+
+(append x y) ;(1 2 3 4 5 6)
+
+(cons x y) ;((1 2 3) 4 5 6)
+
+(list x y) ;((1 2 3) (4 5 6))
+
+
+
+2.27
+(define (deep-reverse tree)
+  (cond ((null? tree) nil)
+        ((not (pair? tree)) tree)
+        (else (append (deep-reverse (cdr tree))
+                      (list (deep-reverse (car tree)))))))
+
+
+
+2.28
+(define (fringe tree)
+  (cond ((null? tree) nil)
+        ((not (pair? tree)) (list tree))
+        (else (append (fringe (car tree))
+                      (fringe (cdr tree))))))
+
+
+
+2.29
+;; Very interesting excercice. I enjoyed it very much since I like 
+;; that kind of simple-into-complicated transitions during writing a programm.
+
+(define (make-mobile left right)
+  (list left right))
+
+(define (make-branch len structure)
+  (list len structure))
+
+(define (left-branch mobile)
+  (car mobile))
+
+(define (right-branch mobile)
+  (car (cdr mobile)))
+
+(define (branch-length branch)
+  (car branch))
+
+(define (branch-structure branch)
+  (car (cdr branch)))
+
+(define (is-mobile? structure)
+  (pair? structure))
+
+(define (branch-weight branch)
+  (if (is-mobile? (branch-structure branch))
+      (total-weight (branch-structure branch))
+      (branch-structure branch)))
+
+(define (total-weight mobile)
+  (+ (branch-weight (left-branch mobile))
+     (branch-weight (right-branch mobile))))
+
+(define (branch-torque branch)
+  (* (branch-weight branch)
+     (branch-length branch)))
+
+(define (branch-balanced? branch)
+  (if (is-mobile? (branch-structure branch))
+      (mobile-balanced? (branch-structure branch))
+      true))
+
+(define (mobile-balanced? mobile)
+  (and (branch-balanced? (left-branch mobile))
+       (branch-balanced? (right-branch mobile))
+       (= (branch-torque (left-branch mobile))
+          (branch-torque (right-branch mobile)))))
+
+
+
+2.30
+(define (square-tree tree)
+  (map (lambda (sub-tree)
+         (if (pair? sub-tree)
+             (square-tree sub-tree)
+             ((lambda (x) (* x x)) sub-tree)))
+       tree))
+
+
+
+2.31
+(define (tree-map proc tree)
+  (map (lambda (sub-tree)
+         (if (pair? sub-tree)
+             (tree-map proc sub-tree)
+             (proc sub-tree)))
+       tree))
+
+(define (square-tree-map tree)
+  (tree-map (lambda (x) (* x x)) tree))
+
+
+
+2.32
+(define (subsets set)
+  (if (null? set)
+      (list nil)
+      (let ((rest (subsets (cdr set))))
+        (append rest 
+                (map (lambda (x) (cons (car set) x)) 
+                     rest)))))
+
+
+
+2.33
+(define (acc-map proc seq)
+  (accumulate (lambda (x y) (cons (proc x) y))
+              nil
+              seq))
+
+(define (acc-append seq1 seq2)
+  (accumulate cons
+              seq2
+              seq1))
+
+(define (acc-length seq)
+  (accumulate (lambda (x y) (+ y 1))
+              0
+              seq))
+
+
+
+2.34
+(define (horner-eval x coeff-seq)
+  (accumulate (lambda (this-coeff higher-terms) 
+                (+ this-coeff (* x higher-terms)))
+              0
+              coeff-seq))
+
+
+;; I did not comment any of these solutions because I think they are really obvious 
+;; and all of them are in that essential style of LISP programming.
+
+
+2.35
+(define (count-leaves tree)
+  (accumulate +
+              0
+              (map (lambda (x) (if (pair? x)
+                                   (count-leaves x)
+                                   1))
+                   tree)))
+
+
+
+2.36
+(define (accumulate-n op init seqs)
+  (if (null? (car seqs))
+      nil
+      (cons (accumulate op init (map car seqs))
+            (accumulate-n op init (map cdr seqs)))))
+
+
+
+2.37
+(define (dot-product v w)
+  (accumulate + 
+              0 
+              (map * v w)))
+
+(define (matrix-*-vector m v) 
+  (map (lambda (row) (dot-product row v)) 
+       m))
+
+(define (transpose m)
+  (accumulate-n cons
+                nil
+                m))
+
+(define (matrix-*-matrix m n)
+  (let ((cols (transpose n)))
+    (map (lambda (m-row) 
+            (map (lambda (n-col)
+                   (dot-product m-row n-col))  
+                 cols)) 
+         m)))
+
+
+
+2.39
+;; fold-left procedure that defined in page 127 SICP
+
+(define (fold-left op init seq)
+  (define (iter result rest)
+    (if (null? rest)
+        result
+        (iter (op result (car rest))
+              (cdr rest))))
+  (iter init seq))
+
+(define (reverse-fold-right seq)
+  (fold-right (lambda (x y) (append y (list x)))
+                    nil
+                    seq))
+
+(define (reverse-fold-left seq)
+  (fold-left (lambda (x y) (append (list y) x))
+             nil
+             seq))
+
+
+
+2.40
+;; Having a high-level procedures like 'unique-pairs', 'prime-sum?' and 'prime-pairs' 
+;; makes that code really smooth to read and understand compare to the original solution from book:
+;;
+;; (define (prime-sum-pairs n)
+;;   (map make-pair-sum
+;;        (filter prime-sum?
+;;                (flatmap
+;;                  (lambda (i)
+;;                    (map (lambda (j) (list i j))
+;;                         (enumerate-interval 1 (- i 1))))
+;;                (enumerate-interval 1 n)))))
+;;
+;; Basically the code above and below is identical, but it seems obvious that the code below 
+;; is much more easier to support. Now that's a cool coding technique!
+
+(define (pair-sum pair)
+  (+ (car pair)
+     (car (cdr pair))))
+
+(define (prime-sum? pair)
+  (prime? (pair-sum pair)))
+
+(define (unique-pairs n)
+  (flatmap (lambda (i)
+             (map (lambda (j) (list i j))
+                  (enumerate-interval 1 (- i 1))))
+           (enumerate-interval 1 n)))
+
+(define (make-pair-sum pair)
+  (list (car pair)
+        (car (cdr pair))
+        (pair-sum pair)))
+
+(define (prime-pairs n)
+  (filter prime-sum? (unique-pairs n)))
+
+(define (prime-sum-pairs n)
+  (map make-pair-sum (prime-pairs n)))
+
+
+
+2.41
+;; Realisation of this procedure turned out to be even simpler than previous one.
+
+(define (triplet-sum triplet)
+  (+ (car triplet)
+     (car (cdr triplet))
+     (car (cdr (cdr triplet)))))
+
+(define (unique-triplets n)
+  (flatmap (lambda (i)
+             (flatmap (lambda (j)
+                        (map (lambda (k) 
+                               (list i j k))
+                             (enumerate-interval 1 (- j 1))))
+                      (enumerate-interval 1 (- i 1))))
+           (enumerate-interval 1 n)))
+
+(define (make-triplet-with-sum triplet)
+  (list (triplet-sum triplet)
+        triplet))
+
+(define (equal-sum-triplets s n)
+  (filter (lambda (triplet) (= (car triplet) s))
+          (map make-triplet-with-sum (unique-triplets n))))
+
+;; And it works like this:
+
+(equal-sum-triplets 11 20) ;((11 (5 4 2)) (11 (6 3 2)) (11 (6 4 1)) (11 (7 3 1)) (11 (8 2 1)))
+
+
+
+2.44
+;; Just like the 'right-split' procedure
+
+(define (up-split painter n)
+  (if (= n 0)
+      painter
+      (let ((smaller (up-split painter (- n 1))))
+        (below painter (beside smaller smaller)))))
+
+
+
+2.45
+;; Generalizing the 'split' pattern by creating a subprocedure
+
+(define (split first second)
+  (lambda (painter n)
+    (if (= n 0)
+        painter
+        (let ((smaller (split painter (- n 1))))
+          (first painter (second smaller smaller))))))
+
+
+
+2.46
+(define (make-vect x y)
+  (cons x y))
+
+(define (xcor-vect v)
+  (car v))
+
+(define (ycor-vect v)
+  (cdr v))
+
+(define (add-vect v1 v2)
+  (make-vect (+ (xcor-vect v1)
+                (xcor-vect v2))
+             (+ (ycor-vect v1)
+                (ycor-vect v2))))
+
+(define (sub-vect v1 v2)
+  (make-vect (- (xcor-vect v1)
+                (xcor-vect v2))
+             (- (ycor-vect v1)
+                (ycor-vect v2))))
+
+(define (scale-vect v s)
+  (make-vect (* s (xcor-vect v))
+             (* s (ycor-vect v))))
+
+
+
+2.47
+;; A list realisation of 'make-frame' procedure:
+
+(define (make-frame-list origin edge1 edge2)
+  (list origin edge1 edge2))
+
+(define (edge1-frame-list frame)
+  (car (cdr frame)))
+
+(define (edge2-frame-list frame)
+  (car (cdr (cdr frame))))
+
+;; dnd a tree one:
+
+(define (make-frame-tree origin edge1 edge2)
+  (cons origin (cons edge1 edge2)))
+  
+(define (edge1-frame-tree frame)
+  (car (cdr frame)))
+
+(define (edge2-frame-tree frame)
+  (cdr (cdr frame)))
+
+;; 'origin' selector stays the same for both:
+
+(define (origin frame)
+  (car frame))
+
+
+
+2.48
+(define (make-seg start-vect end-vect)
+  (cons start-vect end-vect))
+
+(define (start-seg seg)
+  (car seg))
+
+(define (end-seg seg)
+  (cdr seg))
+
+;; Or even simpler:
+
+(define make-seg cons)
+
+(define start-seg car)
+
+(define end-seg cdr)
+
+
+
+2.49
+a.
+;; I will need all of that frame-sides stuff in painter's that I'll define later
+
+;; Corner functions:
+
+(define (bot-left frame)
+  (origin-frame frame))
+
+(define (top-left frame)
+  (edge1-frame frame))
+
+(define (bot-right frame)
+  (edge2-frame frame))
+
+(define (top-right frame)
+  (add-vect (edge1-frame frame)
+            (edge2-frame frame)))
+
+;; Sides functions:
+
+(define (left-seg frame)
+  (make-seg (bot-left frame)
+            (top-left frame)))
+
+(define (top-seg frame)
+  (make-seg (top-left frame)
+            (top-right frame)))
+
+(define (right-seg frame)
+  (make-seg (top-right frame)
+            (bot-right frame)))
+
+(define (bot-seg frame)
+  (make-seg (bot-right frame)
+            (bot-left frame)))
+
+;; And once again, an important lesson: 'Build some abstration levels, stupid'
+;; Here it goes:
+
+(define (frame-painter frame)
+  (segments->painter (list (left-seg frame)
+                           (top-seg frame)
+                           (right-seg frame)
+                           (bot-seg frame))))
+
+b.
+;; Makes it really easy to work with:
+
+(define (x-painter frame)
+  (segments->painter (list (make-seg (bot-left frame)
+                                     (top-right frame))
+                           (make-seg (bot-right frame)
+                                     (top-left frame)))))
+
+c.
+;; Segment middle functions seems to be pretty useful in future 
+;; since finding a middle of a segment is a common procedure
+
+(define (mid-seg seg)
+  (scale-vect (add-vect (start-seg seg)
+                        (end-seg seg))
+              0.5))
+
+;; Because I need this 'sides-mid' functions only for one procedure, 
+;; I've decided to define it locally inside the 'diamond' painter:
+
+(define (diamond-painter frame)
+  ((let ((left-mid (mid-seg (left-seg frame)))
+         (top-mid (mid-seg (top-seg frame)))
+         (right-mid (mid-seg (right-seg frame)))
+         (bot-mid (mid-seg (bot-seg frame)))))
+   (segments->painter (list (make-seg left-mid top-mid)
+                            (make-seg top-mid right-mid)
+                            (make-seg right-mid bot-mid)
+                            (make-seg bot-mid left-mid)))))
+
+d.
+;; Since I don't have a good Scheme interpreter with a proper realisation of
+;; this drawing 'framework' it would be extremely hard to create that 'wave' painter.
+;; But keeping in mind that now I understand the idea of 'procedure painting' makes
+;; skipping that exhaustive part of exercise an okay decision.
+
+
+
+2.50
+(define (flip-horiz painter)
+  (transform-painter painter
+                     (make-vect 1.0 0.0)
+                     (make-vect 1.0 1.0)
+                     (make-vect 0.0 0.0)))
+
+(define (rotate-180 painter)
+  (transform-painter painter
+                     (make-vect 1.0 1.0)
+                     (make-vect 0.0 1.0)
+                     (make-vect 1.0 0.0)))
+
+(define (rotate-270 painter)
+  (transform-painter painter
+                     (make-vect 0.0 1.0)
+                     (make-vect 0.0 0.0)
+                     (make-vect 1.0 1.0)))
+
+
+
+2.51
+(define (below painter1 painter2)
+  (let ((split-point-left (make-vect 0.0 0.5))
+        (split-point-right (make-vect 1.0 0.5)))
+    (let ((paint-up (transform-painter painter1
+                                       split-point-left
+                                       split-point-right
+                                       (make-vect 0.0 1.0)))
+          (paint-bot (transform-painter painter2
+                                        (make-vect 0.0 0.0)
+                                        (make-vect 1.0 0.0)
+                                        split-point-left)))
+      (lambda (frame)
+        (paint-up frame)
+        (paint-bot frame)))))
+  
+
+(define (below painter1 painter2)
+  (rotate90 (beside (rotate270 painter2)
+                    (rotate270 painter1))))
+
+
+
+2.53
+(list 'a 'b 'c) ;(a b c)
+
+(list (list 'george)) ;((george))
+
+(cdr '((x1 x2) (y1 y2))) ;((y1 y2))
+
+(car (cdr '((x1 x2) (y1 y2)))) ;(y1 y2)
+
+(pair? (car '(a short list))) ;false
+
+(memq 'red '((red shoes) (blue socks))) ;false
+
+(memq 'red '(red shoes blue socks)) ;(red shoes blue socks)
+
+
+
+2.54
+
+
+2.56
+(define (deriv exp var)
+  (cond ((number? exp) 0)
+        ((variable? exp)
+         (if (same-variable? exp var) 1 0))
+        ((sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var)))
+        ((product? exp)
+         (make-sum
+          (make-product (multiplier exp)
+                        (deriv (multiplicand exp) var))
+          (make-product (deriv (multiplier exp) var)
+                        (multiplicand exp))))
+        ((exponentiation? exp)
+         (make-product (exponent exp)
+                       (make-product (make-exponentiation (base exp)
+                                                          (make-substraction (exponent exp) 1))    
+                                     (deriv (base exp) var))))
+        (else
+         (error "unknown expression type -- deriv" exp))))
+
+(define (=number? exp num)
+  (and (number? exp) (= exp num)))
+
+(define (variable? a) (symbol? a))
+
+(define (same-variable? v1 v2) (and (variable? v1) (variable? v2) (eq? v1 v2)))
+
+(define (sum? e) (and (pair? e) (eq? (car e) '+)))
+
+(define (addend e) (cadr e))
+
+(define (augend e) (caddr e))
+
+(define (make-sum a1 . a2) 
+  (cond ((=number? a1 0) a2)
+        ((=number? a2 0) a1)
+        ((and (number? a1) (number? a2)) (+ a1 a2))
+        (else (list '+ a1 a2))))
+
+(define (product? e) (and (pair? e) (eq? (car e) '*)))
+
+(define (multiplier e) (cadr e))
+
+(define (multiplicand e) (caddr e))
+
+(define (make-product m1 m2)
+  (cond ((or (=number? m1 0) (=number? m2 0)) 0)
+        ((=number? m1 1) m2)
+        ((=number? m2 1) m1)
+        ((and (number? m1) (number? m2)) (* m1 m2))
+        (else (list '* m1 m2))))
+
+(define (exponentiation? e) (and (pair? e) (eq? (car e) '^)))
+
+(define (base e) (cadr e))
+
+(define (exponent e) (caddr e))
+
+(define (make-exponentiation b e)
+  (cond ((=number? e 0) 1)
+        ((=number? e 1) b)
+        ((and (number? b) (number? e)) (pow b e))
+        (else (list '^ b e))))
+
+(define (pow b e)
+  (cond ((= b 0) 0)
+        ((= e 0) 1)
+        ((= e 1) b)
+        ((> e 1) (* b (pow b (- e 1))))
+        (else (error "error"))))
+
+(define (substraction? e) (and (pair? e) (eq? (car e) '-)))
+
+(define (minend e) (cadr e))
+
+(define (subend e) (caddr e))
+
+(define (make-substraction a b)
+  (if (and (number? a) (number? b)) 
+      (- a b)
+      (list '- a b)))
+
+(deriv '(+ 1 2 x 5) 'x)
