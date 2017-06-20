@@ -3,7 +3,7 @@
   (if (null? (cdr items))
       items
       (last-pair (cdr items))))
-
+      
 ;;; I consider that a last element function would be much more usefull so I've defined it here:
 
 (define (last-elem items)
@@ -637,9 +637,6 @@ d.
 
 (memq 'red '(red shoes blue socks)) ;(red shoes blue socks)
 
-
-
-2.54
 
 
 2.56
